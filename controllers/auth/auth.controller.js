@@ -1,5 +1,7 @@
 import { User } from "../../models/user.model.js"
 import {genPassword} from "../../lib/function.js"
+import bcrypt from "bcryptjs"
+import jwt from "jsonwebtoken"
 
 
 class AuthController {
@@ -32,7 +34,26 @@ class AuthController {
                 })
             }
         }
-        login = async (res, req, next)=> {}
+        login = async (req, res, next)=> {
+            try{
+                const {email,password} = req.body
+                const user = await User.findOne({email}).exec()
+                if (user !=null){
+                   if(await bcrypt.compare(password, user.password)){
+                    const token = jwt.sign({id:user, iat:Math.floor(Date.now()/
+                    1000)+ (30*24*60*60)},process.env.JWT_SECRECT)
+                    res.json({token,user})
+
+                    }
+                }
+            }catch (e){
+                console.error(e)
+                next({
+                    message: 'Problem while processing request',
+                    status: 400
+                })
+            }
+        }
     }
 
 export default new AuthController
